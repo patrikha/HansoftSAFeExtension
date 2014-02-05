@@ -29,14 +29,12 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="HPMSdkManaged_4_5.x86, Version=1.0.4907.23877, Culture=neutral, PublicKeyToken=b6b6ff16a70279a6, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\HansoftSDK\Win32\HPMSdkManaged_4_5.x86.dll</HintPath>
-    </Reference>
-    <Reference Include="ObjectWrapper">
-      <HintPath>..\..\Projects\Jean\Hansoft-Jean-Jean\bin\Release\ObjectWrapper.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -49,6 +47,12 @@
   <ItemGroup>
     <Compile Include="SAFeExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Hansoft-ObjectWrapper\ObjectWrapper.csproj">
+      <Project>{c7143133-6ff7-4212-9eed-91b0bde6bf5b}</Project>
+      <Name>ObjectWrapper</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
