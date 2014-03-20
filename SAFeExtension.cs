@@ -18,7 +18,7 @@ namespace Hansoft.Jean.Behavior.DeriveBehavior.Expressions
         /// </summary>
         /// <param name="current_task">The item representing an epic in the portfolio project.</param>
         /// <returns></returns>
-        public static string FeatureSummary(Task current_task)
+        public static string FeatureSummary(Task current_task, bool usePoints, string completedColumn)
         {
 
             StringBuilder sb = new StringBuilder();
@@ -55,7 +55,12 @@ namespace Hansoft.Jean.Behavior.DeriveBehavior.Expressions
                 sb.Append('\n');
                 foreach (Task task in featuresInDevelopment)
                 {
-                    string daysDone = task.GetCustomColumnValue("Days completed") + "/" + task.AggregatedEstimatedDays;
+                    double estimate = 0;
+                    if (usePoints)
+                        estimate = task.AggregatedPoints;
+                    else
+                        estimate = task.AggregatedEstimatedDays;
+                    string daysDone = task.GetCustomColumnValue(completedColumn) + "/" + estimate;
                     sb.Append(string.Format(format, new object[] { task.Name, task.AggregatedStatus, daysDone, task.GetCustomColumnValue("Velocity (14 days)"), task.GetCustomColumnValue("Estimated done"), task.GetCustomColumnValue("Product Owner")}));
                     sb.Append('\n');
                 }
@@ -73,7 +78,12 @@ namespace Hansoft.Jean.Behavior.DeriveBehavior.Expressions
                 sb.Append('\n');
                 foreach (Task task in featuresInReleasePlanning)
                 {
-                    sb.Append(string.Format(format, new object[] { task.Name, task.AggregatedEstimatedDays, task.GetCustomColumnValue("Team"), task.GetCustomColumnValue("Product Owner")}));
+                    double estimate = 0;
+                    if (usePoints)
+                        estimate = task.AggregatedPoints;
+                    else
+                        estimate = task.AggregatedEstimatedDays;
+                    sb.Append(string.Format(format, new object[] { task.Name, estimate, task.GetCustomColumnValue("Team"), task.GetCustomColumnValue("Product Owner") }));
                     sb.Append('\n');
                 }
             }
@@ -90,7 +100,12 @@ namespace Hansoft.Jean.Behavior.DeriveBehavior.Expressions
                 sb.Append('\n');
                 foreach (Task task in featuresInBacklog)
                 {
-                    sb.Append(string.Format(format, new object[] { task.Name, task.AggregatedEstimatedDays, ListUtils.ToString(new List<HansoftItem>(task.TaggedToReleases)) }));
+                    double estimate = 0;
+                    if (usePoints)
+                        estimate = task.AggregatedPoints;
+                    else
+                        estimate = task.AggregatedEstimatedDays;
+                    sb.Append(string.Format(format, new object[] { task.Name, estimate, ListUtils.ToString(new List<HansoftItem>(task.TaggedToReleases)) }));
                     sb.Append('\n');
                 }
             }
