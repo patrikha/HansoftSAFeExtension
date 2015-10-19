@@ -1,0 +1,6 @@
+<ProductOwners>
+  <team name="Heroes" po="Superman" />
+  <team name="Villains" po="Magneto" />
+  <team name="Avengers" po="Captain America" />
+  <team name="Mutants (HW)" po="Wolverine" />
+</ProductOwners>
