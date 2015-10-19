@@ -7,11 +7,45 @@ using System.Xml.Serialization;
 using System.IO;
 using HPMSdk;
 using Hansoft.ObjectWrapper;
+using Hansoft.ObjectWrapper.CustomColumnValues;
+using System.Collections;
 
-namespace Hansoft.Jean.Behavior.DeriveBehavior.Expressions
+namespace SE.HansoftExtensions
 {
+
     public class SAFeExtension
     {
+        public static bool debug = false;
+
+        public static HPMProjectCustomColumnsColumn trackingColumn = null;
+
+        public static bool findSprintTaskID(Task parentTask)
+        {
+            foreach(Task t in parentTask.Project.ScheduledItems){
+                //Console.WriteLine(t.Name);
+                
+                if (parentTask.Name == t.Name) {
+                    //Console.WriteLine("--" + t.ProjectView.Name);
+                    //Console.WriteLine("__" + t.Project.Name);
+                    //Console.WriteLine("MATCH");
+                    return true;
+
+                }
+            }
+            return false;
+        }
+
+        private static string getMilestoneString(Task task) {
+            List<HansoftItem> taggs = new List<HansoftItem>(task.TaggedToReleases);
+
+            string milestoneString = ListUtils.ToString(taggs);
+            if (taggs.Count > 1 && milestoneString.Length > 28)
+            {
+                milestoneString = taggs.Count() + " milestones";
+            }
+            return milestoneString.Substring(0, (milestoneString.Length > 28) ? 27 : milestoneString.Length) + ((milestoneString.Length > 28) ? "…" : "");
+        }
+
         /// <summary>
         /// Creates a feature summary suitable to display for each epic in a SAFe portfolio project where
         /// the associated features are linked to the epic they belong to.
@@ -20,24 +54,18 @@ namespace Hansoft.Jean.Behavior.DeriveBehavior.Expressions
         /// <returns></returns>
         public static string FeatureSummary(Task current_task, bool usePoints, string completedColumn)
         {
-
             StringBuilder sb = new StringBuilder();
             List<Task> featuresInDevelopment = new List<Task>();
-            List<Task> featuresInReleasePlanning = new List<Task>();
             List<Task> featuresInBacklog = new List<Task>();
             foreach (Task task in current_task.LinkedTasks)
             {
                 if (task.Project != current_task.Project)
                 {
-                    if (task.Parent.Name == "Development")
+                    if (findSprintTaskID(task))
                     {
                         featuresInDevelopment.Add(task);
                     }
-                    else if (task.Parent.Name == "Release planning")
-                    {
-                        featuresInReleasePlanning.Add(task);
-                    }
-                    else if (task.Parent.Name == "Feature backlog")
+                    else
                     {
                         featuresInBacklog.Add(task);
                     }
@@ -48,10 +76,10 @@ namespace Hansoft.Jean.Behavior.DeriveBehavior.Expressions
             sb.Append('\n');
             if (featuresInDevelopment.Count > 0)
             {
-                string format = "<CODE>{0,-20} │ {1,-13} │ {2, 8} │ {3, 4} │ {4, 10} │ {5, -20}</CODE>";
-                sb.Append(string.Format(format, new object[] { "Name", "Status", "Done", "↓14", "Est. Done", "Product Owner"}));
+                string format = "<CODE>{0, -20} │ {1, -13} │ {2, 8} │ {3, 1}</CODE>";
+                sb.Append(string.Format(format, new object[] { "Name", "Status", "Done", "Milestone(s)" }));
                 sb.Append('\n');
-                sb.Append("<CODE>─────────────────────┼───────────────┼──────────┼──────┼────────────┼─────────────────────</CODE>");
+                sb.Append("<CODE>─────────────────────┼───────────────┼──────────┼─────────────────────────────</CODE>");
                 sb.Append('\n');
                 foreach (Task task in featuresInDevelopment)
                 {
@@ -60,43 +88,25 @@ namespace Hansoft.Jean.Behavior.DeriveBehavior.Expressions
                         estimate = task.AggregatedPoints;
                     else
                         estimate = task.AggregatedEstimatedDays;
-                    string daysDone = task.GetCustomColumnValue(completedColumn) + "/" + estimate;
-                    sb.Append(string.Format(format, new object[] { task.Name, task.AggregatedStatus, daysDone, task.GetCustomColumnValue("Velocity (14 days)"), task.GetCustomColumnValue("Estimated done"), task.GetCustomColumnValue("Product Owner")}));
+                    Object t = task.GetCustomColumnValue(completedColumn);
+                    string daysDone = ((t != null) ? t : "0") + "/" + estimate;
+                    string taskShort = task.Name.Substring(0, (task.Name.Length > 20) ? 19 : task.Name.Length) + ((task.Name.Length > 20) ? "…" : "");
+
+                    sb.Append(string.Format(format, new object[] { taskShort, task.AggregatedStatus, daysDone, getMilestoneString(task) }));
                     sb.Append('\n');
                 }
             }
             sb.Append('\n');
 
-            sb.Append(string.Format("<BOLD>Release planning ({0})</BOLD>", featuresInReleasePlanning.Count));
-            sb.Append('\n');
-            if (featuresInReleasePlanning.Count > 0)
-            {
-                string format = "<CODE>{0,-20} │ {1, 5} │ {2, -20} │ {3, -20}</CODE>";
-                sb.Append(string.Format(format, new object[] { "Name", "Est.", "Team", "Product Owner" }));
-                sb.Append('\n');
-                sb.Append("<CODE>─────────────────────┼───────┼──────────────────────┼─────────────────────</CODE>");
-                sb.Append('\n');
-                foreach (Task task in featuresInReleasePlanning)
-                {
-                    double estimate = 0;
-                    if (usePoints)
-                        estimate = task.AggregatedPoints;
-                    else
-                        estimate = task.AggregatedEstimatedDays;
-                    sb.Append(string.Format(format, new object[] { task.Name, estimate, task.GetCustomColumnValue("Team"), task.GetCustomColumnValue("Product Owner") }));
-                    sb.Append('\n');
-                }
-            }
-            sb.Append('\n');
 
             sb.Append(string.Format("<BOLD>Feature backlog ({0})</BOLD>", featuresInBacklog.Count));
-            sb.Append('\n'); 
+            sb.Append('\n');
             if (featuresInBacklog.Count > 0)
             {
-                string format = "<CODE>{0,-20} │ {1, 5} │ {2, 8}";
-                sb.Append(string.Format(format, new object[] { "Name", "Est.", "PSI" }));
+                string format = "<CODE>{0,-20} │ {1, 6} │ {2, 1}";
+                sb.Append(string.Format(format, new object[] { "Name", "Est.", "Milestone(s)" }));
                 sb.Append('\n');
-                sb.Append("─────────────────────┼───────┼─────────</CODE>");
+                sb.Append("─────────────────────┼────────┼─────────────────────────────</CODE>");
                 sb.Append('\n');
                 foreach (Task task in featuresInBacklog)
                 {
@@ -105,7 +115,8 @@ namespace Hansoft.Jean.Behavior.DeriveBehavior.Expressions
                         estimate = task.AggregatedPoints;
                     else
                         estimate = task.AggregatedEstimatedDays;
-                    sb.Append(string.Format(format, new object[] { task.Name, estimate, ListUtils.ToString(new List<HansoftItem>(task.TaggedToReleases)) }));
+                    string taskShort = task.Name.Substring(0, (task.Name.Length > 20) ? 19 : task.Name.Length) + ((task.Name.Length > 20) ? "…" : "");
+                    sb.Append(string.Format(format, new object[] { taskShort, estimate, getMilestoneString(task) }));
                     sb.Append('\n');
                 }
             }
@@ -115,3 +126,4 @@ namespace Hansoft.Jean.Behavior.DeriveBehavior.Expressions
 
 
 }
+

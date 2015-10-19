@@ -7,7 +7,7 @@
     <ProjectGuid>{4AE3B14C-D431-4FA5-A3E4-9EB8917AC386}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Hansoft.Jean.Behavior.DeriveBehavior.Expressions</RootNamespace>
+    <RootNamespace>SE.HansoftExtensions</RootNamespace>
     <AssemblyName>SAFeExtension</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -21,6 +21,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -32,12 +33,12 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HPMSdkManaged_4_5.x86, Version=1.0.4907.23877, Culture=neutral, PublicKeyToken=b6b6ff16a70279a6, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\HansoftSDK\Win32\HPMSdkManaged_4_5.x86.dll</HintPath>
+    <Reference Include="HPMSdkManaged_4_5.x86">
+      <HintPath>..\HansoftSdk\HPMSdkManaged_4_5.x86.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -45,19 +46,34 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ProductOwnerConfig.cs" />
+    <Compile Include="ProgramTeamsConfig.cs" />
+    <Compile Include="TeamStories2ProgramFeatureAggregation.cs" />
+    <Compile Include="ProjectTaskFromMilestone.cs" />
     <Compile Include="SAFeExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Hansoft-Jean-DeriveBehavior\DeriveBehavior.csproj">
+      <Project>{1cce23bb-b71c-4b9c-ad4e-6e27056da1d0}</Project>
+      <Name>DeriveBehavior</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Hansoft-ObjectWrapper\ObjectWrapper.csproj">
       <Project>{c7143133-6ff7-4212-9eed-91b0bde6bf5b}</Project>
       <Name>ObjectWrapper</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="ProductOwners.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ProgramTeams.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y $(TargtedDir)$(TargetFileName)    $(ProjectDir)..\Behaviors
-copy /Y $(TargtedDir)$(TargetFileName)    $(ProjectDir)..\Runnable</PostBuildEvent>
+    <PostBuildEvent>copy /Y $(TargetDir)$(TargetFileName)    $(ProjectDir)..\Runnable</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
