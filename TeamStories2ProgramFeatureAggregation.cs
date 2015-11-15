@@ -64,21 +64,31 @@ namespace SE.HansoftExtensions
             return t.GetType() == typeof(ProductBacklogItem);
         }
 
+        private static string SIGNOFF = "Sign off";
+        private static string ACCEPTED = "Accepted by PM/SA";
+
         public static string AggregatedStatus(Task feature)
         {
             var status = CalcAggregatedStatus(LinkedTasks(feature));
-            var signoff = feature.GetCustomColumnValue("Sign off");
+            var signoff = feature.GetCustomColumnValue(SIGNOFF);
             if (signoff == null)
                 return status;
             if (status == "Completed")
-                return signoff.ToString() == "Accepted by PM/SA" ? status : "In progress";
+                return signoff.ToString() == ACCEPTED ? status : "In progress";
             return status;
         }
 
         public static bool IsCompleted(Task feature)
         {
             var tasks = LinkedTasks(feature);
-            return tasks.Count() == 0 ? false : tasks.All(i => (EHPMTaskStatus)i.AggregatedStatus.Value == EHPMTaskStatus.Completed);
+            if (tasks.Count() == 0)
+                return false;
+            var completed = tasks.All(i => (EHPMTaskStatus)i.AggregatedStatus.Value == EHPMTaskStatus.Completed);
+            var signoffValue = feature.GetCustomColumnValue(SIGNOFF);
+            if (signoffValue == null)
+                return completed;
+            var signoff = signoffValue.ToString() == ACCEPTED;
+            return completed && signoff;
         }
 
         public static int Points(Task feature)
