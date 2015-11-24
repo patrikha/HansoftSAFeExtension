@@ -34,7 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="HPMSdkManaged_4_5.x86">
-      <HintPath>..\HansoftSdk\HPMSdkManaged_4_5.x86.dll</HintPath>
+      <HintPath>..\HansoftSDK\Win32\HPMSdkManaged_4_5.x86.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -47,7 +47,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ProductOwnerConfig.cs" />
-    <Compile Include="ProgramTeamsConfig.cs" />
     <Compile Include="TeamStories2ProgramFeatureAggregation.cs" />
     <Compile Include="ProjectTaskFromMilestone.cs" />
     <Compile Include="SAFeExtension.cs" />
@@ -65,9 +64,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ProductOwners.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ProgramTeams.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

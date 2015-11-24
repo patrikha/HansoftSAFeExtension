@@ -303,66 +303,9 @@ namespace SE.HansoftExtensions
             return summary_builder.ToString();
         }
 
-        public static string Consumers(Task task)
-        {
-            if (!(task is Release))
-                throw new NotAReleaseException();
-            var linkedTasks = task.LinkedTasks.Where(m => m is ProductBacklogItem && IsTeamProject(m)).Distinct();
-
-            var projects = linkedTasks.Select(t => t.Project.Name).Distinct();
-            var teamNames = projects.Where(p => p.StartsWith(TEAM_PROJECT_PREFIX)).Select(p => p.Substring(TEAM_PROJECT_PREFIX.Length)).Distinct();
-            return string.Join(";", teamNames);
-        }
-
-        public static string InternalDependencies(Task task)
-        {
-            var program = task.Project.Name;
-            var allTasks = LinkedTasks(task);
-            var dependencies = allTasks
-                .Where(t => ProgramTeamsConfig.IsTeamInProgram(program, TeamName(t)) && !LeafCompleted(t))
-                .Select(t => new {Name = TeamName(t), PlannedSprint = MaxPlannedSprint(t.GetCustomColumnValue("Planned sprint"))})
-                .GroupBy(t => t.Name)
-                .Select(t => new {Name = t.Key, MaxPlannedSprint = t.Max(s => s.PlannedSprint)});
-            
-            if (dependencies.Count() <= 1)
-                return "";
-
-            var dependenciesString = dependencies
-                .OrderBy(t => t.MaxPlannedSprint)
-                .Aggregate(new StringBuilder(), (sb, t) => sb.Append(string.Format("{0} ({1})", t.Name, string.IsNullOrEmpty(t.MaxPlannedSprint) ? "not set" : t.MaxPlannedSprint))
-                    .Append(" "), sb => sb.Length > 0 ? sb.ToString(0, sb.Length-1) : "");
-
-            return dependenciesString;
-        }
-
         private static string MaxPlannedSprint(CustomColumnValue plannedSprint)
         {
             return plannedSprint.ToString().Split(';').Where(s => s.StartsWith("S")).Max();
-        }
-
-        public static string ExternalDependencies(Task task)
-        {
-            var program = task.Project.Name;
-            var allDependencies = new HashSet<string>();
-            var milestones = task.TaggedToReleases;
-            foreach (var milestone in milestones)
-            {
-                var allTasks = LinkedTasks(milestone, followTasks: true, followMilestones: false);
-                var dependencies = allTasks
-                    .Where(t => !ProgramTeamsConfig.IsTeamInProgram(program, TeamName(t)))
-                    .GroupBy(t => TeamName(t), t => t.AggregatedStatus, (key, s) => new { TeamName = key, AggregatedStatuses = s});
-                if (dependencies.Count() > 0)
-                {
-                    var col = milestone.Color;
-                    milestone.Color = HANSOFT_RED;
-                    foreach (var dependency in dependencies)
-                        allDependencies.Add(string.Format("{0} ({1})", dependency.TeamName, CalcAggregatedStatus(dependency.AggregatedStatuses)));
-                }
-            }
-            if (allDependencies.Count() == 0)
-                return "";
-
-            return allDependencies.OrderBy(t => t).Aggregate((current, next) => current + ", " + next);
         }
 
         private static bool LeafCompleted(Task t)
