@@ -22,7 +22,6 @@ namespace SE.HansoftExtensions
 
     public class TeamStories2ProgramFeatureAggregation
     {
-        private static readonly System.Drawing.Color HANSOFT_RED = System.Drawing.Color.FromArgb(0xDC, 0x64, 0x64);
         private const string TEAM_PROJECT_PREFIX = "Team - ";
 
         private static IEnumerable<Task> LinkedTasks(Task feature, bool followTasks = false, bool followMilestones = true)
@@ -62,6 +61,34 @@ namespace SE.HansoftExtensions
         private static bool NotComittedBacklogItem(Task t)
         {
             return t.GetType() == typeof(ProductBacklogItem);
+        }
+
+        private static bool LeafCompleted(Task t)
+        {
+            return t.IsCompleted || (EHPMTaskStatus)t.AggregatedStatus.Value == EHPMTaskStatus.Completed;
+        }
+
+        private static bool LeafStatus(Task t, EHPMTaskStatus status)
+        {
+            return (EHPMTaskStatus)t.AggregatedStatus.Value == status;
+        }
+
+        private static string CalcAggregatedStatus(IEnumerable<HansoftEnumValue> values)
+        {
+            if (values.Count() == 0)
+                return "Not done";
+            if (values.Any(i => (EHPMTaskStatus)i.Value == EHPMTaskStatus.Blocked))
+                return "Blocked";
+            if (values.All(i => (EHPMTaskStatus)i.Value == EHPMTaskStatus.Completed))
+                return "Completed";
+            if (values.All(i => (EHPMTaskStatus)i.Value == EHPMTaskStatus.NotDone || (EHPMTaskStatus)i.Value == EHPMTaskStatus.NoStatus))
+                return "Not done";
+            return "In progress";
+        }
+
+        private static string CalcAggregatedStatus(IEnumerable<Task> tasks)
+        {
+            return CalcAggregatedStatus(tasks.Select(t => t.AggregatedStatus));
         }
 
         private static string SIGNOFF = "Sign off";
@@ -233,11 +260,6 @@ namespace SE.HansoftExtensions
             }
         }
 
-        public static int Velocity(Task feature)
-        {
-            return feature.DeepLeaves.FindAll(task => ((Task)task).IsCompleted && ((DateTimeValue)((Task)task).GetCustomColumnValue("Status last changed")).ToDateTime() > DateTime.Now.AddDays(-14)  ).Sum(task => ((Task)task).Points);
-        }
-
         const string FEATURE_SUMMARY_LINE_FORMAT = "<CODE>{0,-15} │ {1,-11} │ {2, -7} │ {3, -8} │ {4, -15} │ {5, -15}</CODE>\n";
         static readonly object[] FEATURE_SUMMARY_HEADINGS = { "Team", "Status", "Points", "Stories", "Product Owner", "Planned sprint" };
         const string FEATURE_SUMMARY_HEADER_SEPARATOR = "<CODE>────────────────┼─────────────┼─────────┼──────────┼─────────────────┼───────────────────</CODE>\n";
@@ -303,37 +325,15 @@ namespace SE.HansoftExtensions
             return summary_builder.ToString();
         }
 
-        private static string MaxPlannedSprint(CustomColumnValue plannedSprint)
+        public static string Consumers(Task task)
         {
-            return plannedSprint.ToString().Split(';').Where(s => s.StartsWith("S")).Max();
-        }
+            if (!(task is Release))
+                throw new NotAReleaseException();
+            var linkedTasks = task.LinkedTasks.Where(m => m is ProductBacklogItem && IsTeamProject(m)).Distinct();
 
-        private static bool LeafCompleted(Task t)
-        {
-            return t.IsCompleted || (EHPMTaskStatus)t.AggregatedStatus.Value == EHPMTaskStatus.Completed;
-        }
-
-        private static bool LeafStatus(Task t, EHPMTaskStatus status)
-        {
-            return (EHPMTaskStatus)t.AggregatedStatus.Value == status;
-        }
-
-        private static string CalcAggregatedStatus(IEnumerable<HansoftEnumValue> values)
-        {
-            if (values.Count() == 0)
-                return "Not done";
-            if (values.Any(i => (EHPMTaskStatus)i.Value == EHPMTaskStatus.Blocked))
-                return "Blocked";
-            if (values.All(i => (EHPMTaskStatus)i.Value == EHPMTaskStatus.Completed))
-                return "Completed";
-            if (values.All(i => (EHPMTaskStatus)i.Value == EHPMTaskStatus.NotDone || (EHPMTaskStatus)i.Value == EHPMTaskStatus.NoStatus))
-                return "Not done";
-            return "In progress";
-        }
-
-        private static string CalcAggregatedStatus(IEnumerable<Task> tasks)
-        {
-            return CalcAggregatedStatus(tasks.Select(t => t.AggregatedStatus));
+            var projects = linkedTasks.Select(t => t.Project.Name).Distinct();
+            var teamNames = projects.Where(p => p.StartsWith(TEAM_PROJECT_PREFIX)).Select(p => p.Substring(TEAM_PROJECT_PREFIX.Length)).Distinct();
+            return string.Join(";", teamNames);
         }
     }
 }
