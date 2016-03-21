@@ -38,7 +38,7 @@ namespace SE.HansoftExtensions
             var linkedMilestonesTasks = linkedMilestones
                 .Cast<Release>()
                 .SelectMany(ms => ms.GetSummary().dependentTasks)
-                .Where(t => NotComittedBacklogItem(t));
+                .Where(t => NotComittedBacklogItem(t) || SprintBacklogOnlyItem(t));
             var linkedMilestonesTasksChildren = linkedMilestonesTasks.SelectMany(t => t.DeepChildren.Cast<Task>());
             var linkedMilestonesTaskLeaves = linkedMilestonesTasks.Concat(linkedMilestonesTasksChildren).Where(t => !t.HasChildren);
 
@@ -61,6 +61,13 @@ namespace SE.HansoftExtensions
         private static bool NotComittedBacklogItem(Task t)
         {
             return t.GetType() == typeof(ProductBacklogItem);
+        }
+
+        private static bool SprintBacklogOnlyItem(Task t)
+        {
+            if (t.GetType() != typeof(SprintBacklogItem))
+                return false;
+            return ((SprintBacklogItem)t).IsOnlyInSprintBacklog;
         }
 
         private static bool LeafCompleted(Task t)
