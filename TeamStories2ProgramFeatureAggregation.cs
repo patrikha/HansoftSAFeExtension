@@ -286,6 +286,7 @@ namespace SE.HansoftExtensions
             }
             var projects = allTasks.Select(t => t.Project.Name).Distinct();
             var allPlannedSprints = new SortedSet<string>();
+            var plannedIPSprint = false;
 
             var summary_builder = new StringBuilder();
             summary_builder.Append(string.Format(FEATURE_SUMMARY_LINE_FORMAT, FEATURE_SUMMARY_HEADINGS));
@@ -321,13 +322,18 @@ namespace SE.HansoftExtensions
 
                 if (plannedSprintsString.Length > 0)
                 {
+                    if (!plannedIPSprint && plannedSprints.Where(t => t == "IP").Any())
+                        plannedIPSprint = true;
                     var maxPlannedSprint = plannedSprints.Where(t => t.StartsWith("S")).Max();
                     allPlannedSprints.Add(maxPlannedSprint);
                 }
             }
 
-            if (allPlannedSprints.Count() > 0)
+            if (plannedIPSprint)
+                feature.SetCustomColumnValue("Planned sprint", "IP");
+            else if (allPlannedSprints.Count() > 0)
                 feature.SetCustomColumnValue("Planned sprint", allPlannedSprints.Max());
+
 
             return summary_builder.ToString();
         }
